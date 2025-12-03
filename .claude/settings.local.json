@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(ipconfig getifaddr:*)",
+      "Bash(npm install:*)",
+      "Bash(npm start)",
+      "Bash(pkill:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nじゃんけんおにごっこ - 初期コミット\n\n円環型ボードでのじゃんけん鬼ごっこゲーム\n- オンライン対戦機能（Socket.io）\n- 1台で対戦モード\n- チュートリアル機能\n- 戦績管理機能\n- ワープマス（12→4）\n- 再戦機能\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

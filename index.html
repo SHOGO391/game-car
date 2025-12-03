@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>円環型じゃんけん鬼ごっこ</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- トップ画面 -->
+    <div id="screen-top" class="screen active">
+        <!-- 背景アニメーション -->
+        <div class="top-bg">
+            <div class="bg-circle bg-circle-1"></div>
+            <div class="bg-circle bg-circle-2"></div>
+            <div class="bg-circle bg-circle-3"></div>
+            <div class="floating-emoji floating-1">✊</div>
+            <div class="floating-emoji floating-2">✌️</div>
+            <div class="floating-emoji floating-3">✋</div>
+            <div class="floating-emoji floating-4">👹</div>
+            <div class="floating-emoji floating-5">🏃</div>
+        </div>
+
+        <div class="screen-content top-content">
+            <!-- キャラクター -->
+            <div class="top-characters">
+                <div class="top-char oni-char">
+                    <span class="char-emoji">👹</span>
+                    <span class="char-speech">まてー！</span>
+                </div>
+                <div class="top-char runner-char">
+                    <span class="char-emoji">🏃</span>
+                    <span class="char-speech">にげろー！</span>
+                </div>
+            </div>
+
+            <!-- タイトル -->
+            <div class="title-container">
+                <div class="title-sub">ぐるぐる回る！</div>
+                <h1 class="title">
+                    <span class="title-line">じゃんけん</span>
+                    <span class="title-line title-accent">おにごっこ</span>
+                </h1>
+                <div class="title-badge">15ターンバトル</div>
+            </div>
+
+            <!-- 戦績表示 -->
+            <div class="stats-display">
+                <div class="stats-item">
+                    <span class="stats-label">👹 鬼</span>
+                    <span id="stats-oni" class="stats-value">0勝 0敗</span>
+                </div>
+                <div class="stats-divider">|</div>
+                <div class="stats-item">
+                    <span class="stats-label">🏃 逃げ</span>
+                    <span id="stats-runner" class="stats-value">0勝 0敗</span>
+                </div>
+            </div>
+
+            <!-- ボタン -->
+            <div class="top-buttons">
+                <button class="btn btn-play" onclick="app.showScreen('online-menu')">
+                    <span class="btn-icon">🌐</span>
+                    <span class="btn-text">オンライン対戦</span>
+                </button>
+                <button class="btn btn-local" onclick="app.showScreen('settings')">
+                    <span class="btn-icon">📱</span>
+                    <span class="btn-text">1台で対戦</span>
+                </button>
+                <button class="btn btn-rules" onclick="app.showScreen('rules')">
+                    <span class="btn-icon">📖</span>
+                    <span class="btn-text">ルール</span>
+                </button>
+                <button class="btn btn-tutorial" onclick="app.startTutorial()">
+                    <span class="btn-icon">🎓</span>
+                    <span class="btn-text">チュートリアル</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ルール説明画面 -->
+    <div id="screen-rules" class="screen">
+        <div class="screen-content rules-content">
+            <h2>ゲームルール</h2>
+
+            <section class="rule-section">
+                <h3>ゲームの目的</h3>
+                <p><span class="oni">鬼</span>は<span class="runner">逃げ</span>を捕まえる！<br>
+                <span class="runner">逃げ</span>は15ターン逃げ切る！</p>
+            </section>
+
+            <section class="rule-section">
+                <h3>ボードの構造</h3>
+                <div class="rule-board-preview">
+                    <div class="mini-board">
+                        <div class="mini-center">16マス<br>円環</div>
+                    </div>
+                </div>
+                <p>0〜15の16マスが円形に並んでいます。<br>15の次は0に戻ります。</p>
+            </section>
+
+            <section class="rule-section">
+                <h3>初期配置</h3>
+                <p><span class="oni">鬼</span>：マス0　／　<span class="runner">逃げ</span>：マス8</p>
+            </section>
+
+            <section class="rule-section">
+                <h3>じゃんけんと移動</h3>
+                <p>毎ターン、両者がじゃんけんをします。</p>
+                <table class="rule-table">
+                    <tr><th>勝った手</th><th>移動マス数</th></tr>
+                    <tr><td>✊ グー</td><td>2マス</td></tr>
+                    <tr><td>✌️ チョキ</td><td>1マス</td></tr>
+                    <tr><td>✋ パー</td><td>4マス</td></tr>
+                </table>
+                <p>勝者は時計回りか反時計回りを選んで移動！<br>あいこは両者移動なし（1ターン消費）</p>
+            </section>
+
+            <section class="rule-section">
+                <h3>特殊マス</h3>
+                <p>マス<strong>12</strong>に止まると、<br>マス<strong>4</strong>に即ワープ！</p>
+            </section>
+
+            <section class="rule-section">
+                <h3>勝利条件</h3>
+                <p><span class="oni">鬼の勝ち</span>：逃げと同じマスに止まるか、追い越したら勝ち！</p>
+                <p><span class="runner">逃げの勝ち</span>：15ターン逃げ切れば勝ち！</p>
+            </section>
+
+            <button class="btn btn-secondary" onclick="app.showScreen('top')">戻る</button>
+        </div>
+    </div>
+
+    <!-- モード選択画面 -->
+    <div id="screen-mode-select" class="screen">
+        <div class="screen-content">
+            <h2>モード選択</h2>
+
+            <div class="mode-buttons">
+                <button class="btn btn-mode" onclick="app.showScreen('settings')">
+                    <span class="mode-icon">📱</span>
+                    <span class="mode-title">1台で対戦</span>
+                    <span class="mode-desc">同じ端末で交互にプレイ</span>
+                </button>
+
+                <button class="btn btn-mode btn-online" onclick="app.showScreen('online-menu')">
+                    <span class="mode-icon">🌐</span>
+                    <span class="mode-title">オンライン対戦</span>
+                    <span class="mode-desc">2台の端末でリアルタイム対戦</span>
+                </button>
+            </div>
+
+            <button class="btn btn-secondary" onclick="app.showScreen('top')">戻る</button>
+        </div>
+    </div>
+
+    <!-- オンラインメニュー画面 -->
+    <div id="screen-online-menu" class="screen">
+        <div class="screen-content">
+            <h2>オンライン対戦</h2>
+
+            <div class="online-buttons">
+                <button class="btn btn-mode" onclick="app.createRoom()">
+                    <span class="mode-icon">🏠</span>
+                    <span class="mode-title">ルームを作る</span>
+                    <span class="mode-desc">ルームコードを発行して待機</span>
+                </button>
+
+                <button class="btn btn-mode" onclick="app.showScreen('room-join')">
+                    <span class="mode-icon">🚪</span>
+                    <span class="mode-title">ルームに参加</span>
+                    <span class="mode-desc">コードを入力して参加</span>
+                </button>
+            </div>
+
+            <button class="btn btn-secondary" onclick="app.showScreen('top')">戻る</button>
+        </div>
+    </div>
+
+    <!-- ルーム作成・待機画面 -->
+    <div id="screen-room-waiting" class="screen">
+        <div class="screen-content">
+            <h2>ルーム作成</h2>
+
+            <div class="room-info">
+                <div class="room-code-label">ルームコード</div>
+                <div id="room-code-display" class="room-code" onclick="app.copyRoomCode()">----</div>
+                <p class="room-instruction">タップでコピー / このコードを相手に伝えてください</p>
+            </div>
+
+            <div class="waiting-status">
+                <div class="waiting-spinner"></div>
+                <p id="waiting-message">相手を待っています...</p>
+            </div>
+
+            <div class="your-role">
+                <span class="role-label">あなたの役割：</span>
+                <span id="your-role-display" class="role-value">👹 鬼</span>
+            </div>
+
+            <button class="btn btn-secondary" onclick="app.leaveRoom()">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- ルーム参加画面 -->
+    <div id="screen-room-join" class="screen">
+        <div class="screen-content">
+            <h2>ルームに参加</h2>
+
+            <div class="join-form">
+                <label class="input-label">ルームコードを入力</label>
+                <input type="text" id="room-code-input" class="room-code-input" maxlength="4" placeholder="XXXX" autocomplete="off">
+                <p id="join-error" class="join-error"></p>
+            </div>
+
+            <div class="join-buttons">
+                <button class="btn btn-primary" onclick="app.joinRoom()">参加する</button>
+                <button class="btn btn-secondary" onclick="app.showScreen('online-menu')">戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- マッチング完了画面 -->
+    <div id="screen-matched" class="screen">
+        <div class="screen-content">
+            <h2>マッチング完了！</h2>
+
+            <div class="match-info">
+                <div class="match-players">
+                    <div class="match-player oni-match">
+                        <div class="match-icon">👹</div>
+                        <div class="match-role">鬼</div>
+                        <div id="oni-player-label" class="match-label">相手</div>
+                    </div>
+                    <div class="match-vs">VS</div>
+                    <div class="match-player runner-match">
+                        <div class="match-icon">🏃</div>
+                        <div class="match-role">逃げ</div>
+                        <div id="runner-player-label" class="match-label">あなた</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="start-game-section" class="start-section">
+                <button class="btn btn-primary btn-large" onclick="app.startOnlineGame()">ゲーム開始</button>
+                <p class="start-note">鬼のプレイヤーがゲームを開始します</p>
+            </div>
+
+            <div id="wait-start-section" class="start-section" style="display: none;">
+                <div class="waiting-spinner"></div>
+                <p>相手がゲームを開始するのを待っています...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ゲーム設定画面 -->
+    <div id="screen-settings" class="screen">
+        <div class="screen-content">
+            <h2>ゲーム設定</h2>
+
+            <div class="settings-info">
+                <div class="role-title">役割分担</div>
+                <div class="player-info">
+                    <div class="player-card oni-card">
+                        <div class="player-icon">👹</div>
+                        <div class="player-label">プレイヤー1</div>
+                        <div class="player-role">鬼</div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="player-card runner-card">
+                        <div class="player-icon">🏃</div>
+                        <div class="player-label">プレイヤー2</div>
+                        <div class="player-role">逃げ</div>
+                    </div>
+                </div>
+                <p class="settings-note">同じ端末で交互に入力します<br>先に鬼、次に逃げの順番で手を選んでください</p>
+            </div>
+
+            <div class="settings-buttons">
+                <button class="btn btn-primary" onclick="app.startGame()">ゲーム開始</button>
+                <button class="btn btn-secondary" onclick="app.showScreen('top')">戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 対戦画面 -->
+    <div id="screen-game" class="screen">
+        <div class="game-header">
+            <button id="game-exit-btn" class="game-exit-btn" onclick="app.exitGame()">✕</button>
+            <div class="turn-info">ターン <span id="turn-count">1</span> / 15</div>
+            <div id="connection-status" class="connection-status"></div>
+        </div>
+
+        <div class="game-board-container">
+            <div id="game-board" class="game-board">
+                <!-- マスはJSで生成 -->
+                <div class="board-center">
+                    <div id="phase-indicator" class="phase-indicator">じゃんけん</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-status">
+            <div class="player-status oni-status">
+                <span class="status-icon">👹</span>
+                <span class="status-label">鬼</span>
+                <span id="oni-position" class="status-position">マス 0</span>
+            </div>
+            <div class="player-status runner-status">
+                <span class="status-icon">🏃</span>
+                <span class="status-label">逃げ</span>
+                <span id="runner-position" class="status-position">マス 8</span>
+            </div>
+        </div>
+
+        <!-- じゃんけん入力フェーズ -->
+        <div id="phase-janken" class="game-phase">
+            <div id="janken-player-label" class="player-turn-label">👹 鬼の番</div>
+            <div id="privacy-warning" class="privacy-warning">
+                <span class="warning-icon">🙈</span>
+                <span class="warning-text">相手に見せないで！</span>
+            </div>
+            <div class="janken-buttons">
+                <button class="btn-janken" onclick="app.selectHand('rock')">
+                    <span class="janken-icon">✊</span>
+                    <span class="janken-label">グー</span>
+                </button>
+                <button class="btn-janken" onclick="app.selectHand('scissors')">
+                    <span class="janken-icon">✌️</span>
+                    <span class="janken-label">チョキ</span>
+                </button>
+                <button class="btn-janken" onclick="app.selectHand('paper')">
+                    <span class="janken-icon">✋</span>
+                    <span class="janken-label">パー</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 手の確認フェーズ -->
+        <div id="phase-confirm" class="game-phase" style="display: none;">
+            <p class="phase-instruction">入力完了！端末を相手に渡してください</p>
+            <button class="btn btn-primary" onclick="app.confirmHand()">OK（次のプレイヤーへ）</button>
+        </div>
+
+        <!-- じゃんけんショーダウン（カウントダウン演出） -->
+        <div id="phase-showdown" class="game-phase" style="display: none;">
+            <div class="showdown-container">
+                <div id="showdown-countdown" class="showdown-countdown">3</div>
+                <div class="showdown-hands">
+                    <div class="showdown-hand oni-showdown">
+                        <div class="showdown-label">👹</div>
+                        <div id="oni-showdown-hand" class="showdown-display">❓</div>
+                    </div>
+                    <div class="showdown-vs">VS</div>
+                    <div class="showdown-hand runner-showdown">
+                        <div class="showdown-label">🏃</div>
+                        <div id="runner-showdown-hand" class="showdown-display">❓</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果表示フェーズ -->
+        <div id="phase-result" class="game-phase" style="display: none;">
+            <div class="janken-result">
+                <div class="result-hands">
+                    <div class="result-hand oni-hand">
+                        <div class="result-label">👹 鬼</div>
+                        <div id="oni-hand-display" class="hand-display">✊</div>
+                    </div>
+                    <div class="result-vs">VS</div>
+                    <div class="result-hand runner-hand">
+                        <div class="result-label">🏃 逃げ</div>
+                        <div id="runner-hand-display" class="hand-display">✌️</div>
+                    </div>
+                </div>
+                <div id="janken-result-text" class="result-text">鬼の勝ち！</div>
+            </div>
+            <button id="result-next-btn" class="btn btn-primary" onclick="app.proceedAfterResult()">次へ</button>
+        </div>
+
+        <!-- 移動方向選択フェーズ -->
+        <div id="phase-direction" class="game-phase" style="display: none;">
+            <div id="direction-player-label" class="player-turn-label">👹 鬼の番</div>
+            <p class="phase-instruction">移動方向を選んでください（<span id="move-steps">2</span>マス移動）</p>
+            <div class="direction-buttons">
+                <button class="btn-direction" onclick="app.selectDirection('cw')">
+                    <span class="direction-icon">↻</span>
+                    <span class="direction-label">時計回り</span>
+                </button>
+                <button class="btn-direction" onclick="app.selectDirection('ccw')">
+                    <span class="direction-icon">↺</span>
+                    <span class="direction-label">反時計回り</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 移動アニメーションフェーズ -->
+        <div id="phase-moving" class="game-phase" style="display: none;">
+            <p class="phase-instruction">移動中...</p>
+        </div>
+
+        <!-- オンライン: 相手の入力待ちフェーズ -->
+        <div id="phase-waiting-opponent" class="game-phase" style="display: none;">
+            <div class="waiting-opponent">
+                <div class="waiting-spinner"></div>
+                <p id="waiting-opponent-text" class="phase-instruction">相手の入力を待っています...</p>
+            </div>
+        </div>
+
+        <!-- ゲームログ -->
+        <details id="game-log" class="game-log">
+            <summary class="log-header">
+                <span class="log-icon">📋</span>
+                <span class="log-title">対戦ログ</span>
+                <span class="log-toggle">▼</span>
+            </summary>
+            <div class="log-table-wrapper">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>T</th>
+                            <th>👹</th>
+                            <th>🏃</th>
+                            <th>結果</th>
+                            <th>移動</th>
+                            <th>位置</th>
+                        </tr>
+                    </thead>
+                    <tbody id="log-content"></tbody>
+                </table>
+            </div>
+        </details>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="screen-result" class="screen">
+        <div class="screen-content result-content">
+            <div id="result-winner" class="result-winner">👹 鬼の勝ち！</div>
+            <div id="result-reason" class="result-reason">逃げを捕まえた！</div>
+
+            <div class="result-stats">
+                <div class="stat-item">
+                    <span class="stat-label">ターン数</span>
+                    <span id="result-turns" class="stat-value">5</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">最終位置</span>
+                    <span id="result-positions" class="stat-value">鬼:5 逃げ:5</span>
+                </div>
+            </div>
+
+            <!-- オンライン再戦セクション -->
+            <div id="rematch-section" class="rematch-section" style="display: none;">
+                <button id="rematch-btn" class="btn btn-primary" onclick="app.requestRematch()">再戦する</button>
+                <div id="rematch-status" class="rematch-status" style="display: none;">
+                    <div class="waiting-spinner small"></div>
+                    <span id="rematch-status-text">相手の応答を待っています...</span>
+                </div>
+            </div>
+
+            <div class="result-buttons">
+                <button id="local-restart-btn" class="btn btn-primary" onclick="app.restartGame()">もう一度遊ぶ</button>
+                <button class="btn btn-secondary" onclick="app.showScreen('top')">トップへ戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- チュートリアル画面 -->
+    <div id="screen-tutorial" class="screen">
+        <div class="screen-content tutorial-content">
+            <div class="tutorial-header">
+                <h2 id="tutorial-title">チュートリアル</h2>
+                <div class="tutorial-progress">
+                    <span id="tutorial-step">1</span> / <span id="tutorial-total">5</span>
+                </div>
+            </div>
+
+            <div id="tutorial-body" class="tutorial-body">
+                <!-- チュートリアルの内容がここに動的に入る -->
+            </div>
+
+            <div class="tutorial-buttons">
+                <button id="tutorial-prev" class="btn btn-secondary" onclick="app.tutorialPrev()">戻る</button>
+                <button id="tutorial-next" class="btn btn-primary" onclick="app.tutorialNext()">次へ</button>
+                <button id="tutorial-finish" class="btn btn-primary" onclick="app.tutorialFinish()" style="display:none;">完了</button>
+            </div>
+
+            <button class="btn btn-skip" onclick="app.tutorialSkip()">スキップ</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/multiplayer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

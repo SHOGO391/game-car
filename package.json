@@ -1,0 +1,14 @@
+{
+  "name": "janken-onigokko",
+  "version": "1.0.0",
+  "description": "円環型じゃんけん鬼ごっこ - オンライン対戦",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}
