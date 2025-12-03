@@ -368,6 +368,39 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
+.btn-cpu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    background: linear-gradient(180deg, #9C27B0 0%, #7B1FA2 100%);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow:
+        0 6px 0 #6A1B9A,
+        0 8px 15px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-cpu:hover {
+    transform: translateY(-3px);
+    box-shadow:
+        0 9px 0 #6A1B9A,
+        0 12px 20px rgba(0,0,0,0.3);
+}
+
+.btn-cpu:active {
+    transform: translateY(3px);
+    box-shadow:
+        0 3px 0 #6A1B9A,
+        0 4px 10px rgba(0,0,0,0.3);
+}
+
 .btn-rules {
     display: flex;
     align-items: center;
@@ -1780,7 +1813,7 @@ body {
    =========================================== */
 
 .board-cell.previous-position {
-    position: relative;
+    /* position: absolute は維持（position: relative にすると位置がズレる） */
 }
 
 .board-cell.previous-position::after {
@@ -2306,4 +2339,152 @@ body {
 
 .btn-skip:hover {
     color: white;
+}
+
+/* ===========================================
+   CPU対戦設定画面
+   =========================================== */
+
+#screen-cpu-settings {
+    background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%);
+}
+
+#screen-cpu-settings h2 {
+    color: white;
+    font-size: 28px;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.cpu-settings-info {
+    width: 100%;
+    max-width: 340px;
+    margin-bottom: 24px;
+}
+
+.cpu-settings-desc {
+    color: white;
+    font-size: 16px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.role-select-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.btn-role {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 20px;
+    background: rgba(255,255,255,0.95);
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.btn-role:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.btn-role:active {
+    transform: translateY(-2px);
+}
+
+.btn-oni-role {
+    border: 3px solid #e74c3c;
+}
+
+.btn-oni-role:hover {
+    background: #ffebee;
+}
+
+.btn-runner-role {
+    border: 3px solid #3498db;
+}
+
+.btn-runner-role:hover {
+    background: #e3f2fd;
+}
+
+.btn-role .role-icon {
+    font-size: 48px;
+}
+
+.btn-role .role-name {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+}
+
+.btn-role .role-desc {
+    font-size: 14px;
+    color: #666;
+}
+
+#screen-cpu-settings .btn-secondary {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.4);
+    box-shadow: none;
+}
+
+#screen-cpu-settings .btn-secondary:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* 難易度選択 */
+.difficulty-select {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 15px 0 25px;
+}
+
+.btn-difficulty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 20px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 90px;
+}
+
+.btn-difficulty:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-2px);
+}
+
+.btn-difficulty.active {
+    background: rgba(255,255,255,0.9);
+    border-color: #f39c12;
+    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
+}
+
+.btn-difficulty .difficulty-stars {
+    font-size: 18px;
+    color: #f39c12;
+    margin-bottom: 4px;
+}
+
+.btn-difficulty .difficulty-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: rgba(255,255,255,0.9);
+}
+
+.btn-difficulty.active .difficulty-name {
+    color: #333;
 }

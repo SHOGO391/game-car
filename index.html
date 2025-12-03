@@ -63,6 +63,10 @@
                     <span class="btn-icon">🌐</span>
                     <span class="btn-text">オンライン対戦</span>
                 </button>
+                <button class="btn btn-cpu" onclick="app.showScreen('cpu-settings')">
+                    <span class="btn-icon">🤖</span>
+                    <span class="btn-text">CPU対戦</span>
+                </button>
                 <button class="btn btn-local" onclick="app.showScreen('settings')">
                     <span class="btn-icon">📱</span>
                     <span class="btn-text">1台で対戦</span>
@@ -281,6 +285,49 @@
                 <button class="btn btn-primary" onclick="app.startGame()">ゲーム開始</button>
                 <button class="btn btn-secondary" onclick="app.showScreen('top')">戻る</button>
             </div>
+        </div>
+    </div>
+
+    <!-- CPU対戦設定画面 -->
+    <div id="screen-cpu-settings" class="screen">
+        <div class="screen-content">
+            <h2>CPU対戦</h2>
+
+            <div class="cpu-settings-info">
+                <!-- 難易度選択 -->
+                <p class="cpu-settings-desc">難易度を選んでください</p>
+                <div class="difficulty-select">
+                    <button class="btn btn-difficulty active" data-level="1" onclick="app.setCpuDifficulty(1)">
+                        <span class="difficulty-stars">★☆☆</span>
+                        <span class="difficulty-name">かんたん</span>
+                    </button>
+                    <button class="btn btn-difficulty" data-level="2" onclick="app.setCpuDifficulty(2)">
+                        <span class="difficulty-stars">★★☆</span>
+                        <span class="difficulty-name">ふつう</span>
+                    </button>
+                    <button class="btn btn-difficulty" data-level="3" onclick="app.setCpuDifficulty(3)">
+                        <span class="difficulty-stars">★★★</span>
+                        <span class="difficulty-name">むずかしい</span>
+                    </button>
+                </div>
+
+                <!-- 役割選択 -->
+                <p class="cpu-settings-desc" style="margin-top: 24px;">役割を選んでください</p>
+                <div class="role-select-buttons">
+                    <button class="btn btn-role btn-oni-role" onclick="app.startCpuGame('oni')">
+                        <div class="role-icon">👹</div>
+                        <div class="role-name">鬼で遊ぶ</div>
+                        <div class="role-desc">CPUを捕まえろ！</div>
+                    </button>
+                    <button class="btn btn-role btn-runner-role" onclick="app.startCpuGame('runner')">
+                        <div class="role-icon">🏃</div>
+                        <div class="role-name">逃げで遊ぶ</div>
+                        <div class="role-desc">CPUから逃げ切れ！</div>
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="app.showScreen('top')">戻る</button>
         </div>
     </div>
 

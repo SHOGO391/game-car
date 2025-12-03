@@ -20,6 +20,12 @@ class App {
         this.myHandSelected = false;
         this.opponentHandSelected = false;
 
+        // CPUモード
+        this.isCpuMode = false;
+        this.playerRole = null;  // プレイヤーの役割 ('oni' or 'runner')
+        this.cpuRole = null;     // CPUの役割 ('oni' or 'runner')
+        this.cpuDifficulty = 1;  // 難易度 (1:かんたん, 2:ふつう, 3:むずかしい)
+
         // オンライン同期用フラグ
         this.isAnimating = false;
         this.pendingTurnEnded = null;
@@ -330,7 +336,215 @@ class App {
             this.leaveRoom();
             return;
         }
+        // CPUモードの場合
+        if (this.isCpuMode) {
+            this.startCpuGame(this.playerRole);
+            return;
+        }
         this.startGame();
+    }
+
+    /**
+     * CPU難易度を設定
+     * @param {number} level - 難易度 (1:かんたん, 2:ふつう, 3:むずかしい)
+     */
+    setCpuDifficulty(level) {
+        this.cpuDifficulty = level;
+
+        // ボタンのactive状態を更新
+        const buttons = document.querySelectorAll('.btn-difficulty');
+        buttons.forEach(btn => {
+            if (parseInt(btn.dataset.level) === level) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * CPU対戦ゲーム開始
+     * @param {string} playerRole - プレイヤーの役割 ('oni' or 'runner')
+     */
+    startCpuGame(playerRole) {
+        this.game.reset();
+        this.isCpuMode = true;
+        this.isOnlineMode = false;
+        this.playerRole = playerRole;
+        this.cpuRole = playerRole === 'oni' ? 'runner' : 'oni';
+        this.showScreen('game');
+
+        // 接続状態にCPU対戦と表示
+        const connStatus = document.getElementById('connection-status');
+        if (connStatus) {
+            connStatus.textContent = 'vs CPU';
+            connStatus.classList.remove('online');
+            connStatus.classList.remove('reconnecting');
+        }
+
+        // ボードを再生成（画面サイズに合わせる）
+        setTimeout(() => {
+            this.createBoard();
+            this.createPlayerMarkers();
+            this.createBoardOverlays();
+            this.updateMarkerPositions();
+            this.updateTurnDisplay();
+            this.clearLog();
+            this.clearPreviousPositionMarkers();
+            this.startCpuTurn();
+        }, 100);
+    }
+
+    /**
+     * CPUターン開始（じゃんけんフェーズ）
+     */
+    startCpuTurn() {
+        this.showPhase('janken');
+
+        // プライバシー警告を非表示
+        const privacyWarning = document.getElementById('privacy-warning');
+        if (privacyWarning) privacyWarning.style.display = 'none';
+
+        // プレイヤー用のラベルを表示
+        const label = document.getElementById('janken-player-label');
+        if (label) {
+            if (this.playerRole === 'oni') {
+                label.textContent = '👹 あなたの番（鬼）';
+                label.style.color = '#e74c3c';
+            } else {
+                label.textContent = '🏃 あなたの番（逃げ）';
+                label.style.color = '#3498db';
+            }
+        }
+    }
+
+    /**
+     * CPUのじゃんけん手を選択（AI）
+     * @returns {string} rock/scissors/paper
+     */
+    cpuSelectHand() {
+        const hands = ['rock', 'scissors', 'paper'];
+
+        // 難易度に応じてプレイヤーの手を参照してカウンターを出す確率
+        // Level 1: 0%, Level 2: 20%, Level 3: 40%
+        const cheatChance = [0, 0, 0.2, 0.4][this.cpuDifficulty] || 0;
+
+        if (cheatChance > 0 && Math.random() < cheatChance) {
+            // プレイヤーの手を参照してカウンターを出す
+            const playerHand = this.game[this.playerRole + 'Hand'];
+            if (playerHand) {
+                // 勝てる手を返す
+                const counterHands = {
+                    rock: 'paper',      // グーにはパー
+                    scissors: 'rock',   // チョキにはグー
+                    paper: 'scissors'   // パーにはチョキ
+                };
+                return counterHands[playerHand];
+            }
+        }
+
+        // 通常のAI戦略
+        // 状況に応じて手を選ぶ
+        const distance = this.getDistanceBetweenPlayers();
+
+        if (this.cpuRole === 'oni') {
+            // 鬼の場合：近ければパー（4マス）で追い詰める、遠ければグー（2マス）で安定
+            if (distance <= 4) {
+                // 近い時はパーを多めに
+                const weights = [0.25, 0.25, 0.5]; // rock, scissors, paper
+                return this.weightedRandom(hands, weights);
+            } else {
+                // 遠い時はランダム
+                return hands[Math.floor(Math.random() * hands.length)];
+            }
+        } else {
+            // 逃げの場合：パー（4マス）で大きく逃げるか、チョキ（1マス）で細かく調整
+            if (distance <= 3) {
+                // 近い時はパーを多めに（大きく逃げる）
+                const weights = [0.2, 0.2, 0.6];
+                return this.weightedRandom(hands, weights);
+            } else {
+                // 遠い時はランダム
+                return hands[Math.floor(Math.random() * hands.length)];
+            }
+        }
+    }
+
+    /**
+     * CPUの移動方向を選択（AI）
+     * @returns {string} cw/ccw
+     */
+    cpuSelectDirection() {
+        const oniPos = this.game.oniPos;
+        const runnerPos = this.game.runnerPos;
+        const hand = this.game[this.cpuRole + 'Hand'];
+        const steps = GameConfig.MOVE_STEPS[hand];
+
+        if (this.cpuRole === 'oni') {
+            // 鬼：逃げに近づく方向を選ぶ
+            const cwDist = this.getDistanceAfterMove(oniPos, steps, 'cw', runnerPos);
+            const ccwDist = this.getDistanceAfterMove(oniPos, steps, 'ccw', runnerPos);
+
+            // 距離が近くなる方を選ぶ
+            if (cwDist < ccwDist) return 'cw';
+            if (ccwDist < cwDist) return 'ccw';
+            return Math.random() < 0.5 ? 'cw' : 'ccw';
+        } else {
+            // 逃げ：鬼から離れる方向を選ぶ
+            const cwDist = this.getDistanceAfterMove(runnerPos, steps, 'cw', oniPos);
+            const ccwDist = this.getDistanceAfterMove(runnerPos, steps, 'ccw', oniPos);
+
+            // 距離が遠くなる方を選ぶ
+            if (cwDist > ccwDist) return 'cw';
+            if (ccwDist > cwDist) return 'ccw';
+            return Math.random() < 0.5 ? 'cw' : 'ccw';
+        }
+    }
+
+    /**
+     * プレイヤー間の距離を取得
+     * @returns {number} 最短距離
+     */
+    getDistanceBetweenPlayers() {
+        const oniPos = this.game.oniPos;
+        const runnerPos = this.game.runnerPos;
+        const cwDist = (runnerPos - oniPos + GameConfig.BOARD_SIZE) % GameConfig.BOARD_SIZE;
+        const ccwDist = (oniPos - runnerPos + GameConfig.BOARD_SIZE) % GameConfig.BOARD_SIZE;
+        return Math.min(cwDist, ccwDist);
+    }
+
+    /**
+     * 移動後の距離を計算
+     */
+    getDistanceAfterMove(startPos, steps, direction, targetPos) {
+        let newPos = startPos;
+        for (let i = 0; i < steps; i++) {
+            if (direction === 'cw') {
+                newPos = (newPos + 1) % GameConfig.BOARD_SIZE;
+            } else {
+                newPos = (newPos - 1 + GameConfig.BOARD_SIZE) % GameConfig.BOARD_SIZE;
+            }
+        }
+        // ワープ処理
+        if (newPos === GameConfig.WARP_FROM) {
+            newPos = GameConfig.WARP_TO;
+        }
+        const cwDist = (targetPos - newPos + GameConfig.BOARD_SIZE) % GameConfig.BOARD_SIZE;
+        const ccwDist = (newPos - targetPos + GameConfig.BOARD_SIZE) % GameConfig.BOARD_SIZE;
+        return Math.min(cwDist, ccwDist);
+    }
+
+    /**
+     * 重み付きランダム選択
+     */
+    weightedRandom(items, weights) {
+        const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+        let random = Math.random() * totalWeight;
+        for (let i = 0; i < items.length; i++) {
+            random -= weights[i];
+            if (random <= 0) return items[i];
+        }
+        return items[items.length - 1];
     }
 
     /**
@@ -391,6 +605,25 @@ class App {
     setJankenPlayer(player) {
         this.currentJankenPlayer = player;
         const label = document.getElementById('janken-player-label');
+        const privacyWarning = document.getElementById('privacy-warning');
+
+        // CPUモード
+        if (this.isCpuMode) {
+            if (label) {
+                if (this.playerRole === 'oni') {
+                    label.textContent = '👹 あなたの番（鬼）';
+                    label.style.color = '#e74c3c';
+                } else {
+                    label.textContent = '🏃 あなたの番（逃げ）';
+                    label.style.color = '#3498db';
+                }
+            }
+            // CPUモードではプライバシー警告を非表示
+            if (privacyWarning) privacyWarning.style.display = 'none';
+            return;
+        }
+
+        // ローカルモード
         if (label) {
             if (player === 'oni') {
                 label.textContent = '👹 鬼の番';
@@ -402,7 +635,6 @@ class App {
         }
 
         // ローカルモードではプライバシー警告を表示
-        const privacyWarning = document.getElementById('privacy-warning');
         if (privacyWarning) privacyWarning.style.display = 'flex';
     }
 
@@ -429,7 +661,21 @@ class App {
             return;
         }
 
-        // ローカルモード
+        // CPUモード
+        if (this.isCpuMode) {
+            // プレイヤーの手をセット
+            this.game.setHand(this.playerRole, hand);
+
+            // CPUの手を自動選択
+            const cpuHand = this.cpuSelectHand();
+            this.game.setHand(this.cpuRole, cpuHand);
+
+            // 結果表示へ
+            this.showJankenResult();
+            return;
+        }
+
+        // ローカルモード（1台で対戦）
         this.game.setHand(this.currentJankenPlayer, hand);
 
         if (this.currentJankenPlayer === 'oni') {
@@ -613,7 +859,39 @@ class App {
             return;
         }
 
-        // ローカルモード
+        // CPUモード
+        if (this.isCpuMode) {
+            if (player === this.cpuRole) {
+                // CPUが勝った場合 - 自動で方向を選択
+                const cpuDirection = this.cpuSelectDirection();
+
+                // 少し待ってから移動（演出）
+                setTimeout(() => {
+                    this.selectDirection(cpuDirection);
+                }, 800);
+                return;
+            } else {
+                // プレイヤーが勝った場合 - 方向選択画面を表示
+                if (label) {
+                    if (player === 'oni') {
+                        label.textContent = '👹 あなたの番（鬼）';
+                        label.style.color = '#e74c3c';
+                    } else {
+                        label.textContent = '🏃 あなたの番（逃げ）';
+                        label.style.color = '#3498db';
+                    }
+                }
+
+                const hand = player === 'oni' ? this.game.oniHand : this.game.runnerHand;
+                const steps = GameConfig.MOVE_STEPS[hand];
+                document.getElementById('move-steps').textContent = steps;
+
+                this.showPhase('direction');
+                return;
+            }
+        }
+
+        // ローカルモード（1台で対戦）
         if (label) {
             if (player === 'oni') {
                 label.textContent = '👹 鬼の番';
@@ -892,29 +1170,30 @@ class App {
 
         winnerEl.classList.remove('oni-winner', 'runner-winner');
 
-        // オンラインモードでは役割に応じたメッセージを表示
-        if (this.isOnlineMode) {
+        // オンラインモードまたはCPUモードでは役割に応じたメッセージを表示
+        if (this.isOnlineMode || this.isCpuMode) {
+            const playerRole = this.isOnlineMode ? this.myRole : this.playerRole;
             if (this.game.winner === 'oni') {
                 winnerEl.classList.add('oni-winner');
-                if (this.myRole === 'oni') {
+                if (playerRole === 'oni') {
                     winnerEl.textContent = '👹 捕まえた！';
-                    reasonEl.textContent = '勝ち！';
+                    reasonEl.textContent = 'あなたの勝ち！';
                 } else {
                     winnerEl.textContent = '😱 捕まった！';
-                    reasonEl.textContent = '負け...';
+                    reasonEl.textContent = 'あなたの負け...';
                 }
             } else {
                 winnerEl.classList.add('runner-winner');
-                if (this.myRole === 'runner') {
+                if (playerRole === 'runner') {
                     winnerEl.textContent = '🏃 逃げ切った！';
-                    reasonEl.textContent = '勝ち！';
+                    reasonEl.textContent = 'あなたの勝ち！';
                 } else {
                     winnerEl.textContent = '😢 捕まえられなかった！';
-                    reasonEl.textContent = '負け...';
+                    reasonEl.textContent = 'あなたの負け...';
                 }
             }
         } else {
-            // ローカルモードでは従来通り
+            // ローカルモード（1台で対戦）では従来通り
             if (this.game.winner === 'oni') {
                 winnerEl.textContent = '👹 鬼の勝ち！';
                 winnerEl.classList.add('oni-winner');
@@ -1583,15 +1862,17 @@ class App {
     }
 
     /**
-     * ゲーム終了時に戦績を記録（オンラインモードのみ）
+     * ゲーム終了時に戦績を記録（オンラインモードとCPUモード）
      */
     recordGameResult() {
-        if (!this.isOnlineMode || !this.myRole) return;
+        // オンラインモードまたはCPUモードでのみ記録
+        const playerRole = this.isOnlineMode ? this.myRole : (this.isCpuMode ? this.playerRole : null);
+        if (!playerRole) return;
 
-        const iWon = (this.game.winner === 'oni' && this.myRole === 'oni') ||
-                     (this.game.winner === 'runner' && this.myRole === 'runner');
+        const iWon = (this.game.winner === 'oni' && playerRole === 'oni') ||
+                     (this.game.winner === 'runner' && playerRole === 'runner');
 
-        this.updateStats(this.myRole, iWon);
+        this.updateStats(playerRole, iWon);
     }
 
     // =====================================
