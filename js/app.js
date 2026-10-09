@@ -811,6 +811,9 @@ class App {
             this.game.endTurn();
 
             if (this.game.isGameOver()) {
+                if (this.isOnlineMode && this.myRole === 'oni') {
+                    this.multiplayer.gameOver(this.game.winner, this.game.winReason);
+                }
                 this.showResult();
             } else {
                 this.updateTurnDisplay();
@@ -1105,14 +1108,26 @@ class App {
             directionClass = 'log-direction-ccw';
         }
 
-        row.innerHTML = `
-            <td>${turn}</td>
-            <td>${handToEmoji(oniHand)}</td>
-            <td>${handToEmoji(runnerHand)}</td>
-            <td class="${resultClass}">${resultText}</td>
-            <td class="log-direction ${directionClass}">${directionText}</td>
-            <td class="log-positions"><span class="pos-oni">${oniPos}</span>:<span class="pos-runner">${runnerPos}</span></td>
-        `;
+        const cell = (text, className = '') => {
+            const td = document.createElement('td');
+            td.textContent = String(text);
+            td.className = className;
+            row.appendChild(td);
+            return td;
+        };
+        cell(turn);
+        cell(handToEmoji(oniHand));
+        cell(handToEmoji(runnerHand));
+        cell(resultText, resultClass);
+        cell(directionText, `log-direction ${directionClass}`);
+        const positions = cell('', 'log-positions');
+        for (const [value, className] of [[oniPos, 'pos-oni'], [runnerPos, 'pos-runner']]) {
+            if (positions.firstChild) positions.appendChild(document.createTextNode(':'));
+            const span = document.createElement('span');
+            span.className = className;
+            span.textContent = String(value);
+            positions.appendChild(span);
+        }
 
         // 最新を上に追加
         logContent.insertBefore(row, logContent.firstChild);
@@ -1275,6 +1290,7 @@ class App {
 
         // 両者の手が公開
         this.multiplayer.on('handsRevealed', (data) => {
+            if (!data || ![data.oniHand, data.runnerHand].every(h => ['rock', 'scissors', 'paper'].includes(h))) return;
             this.game.setHand('oni', data.oniHand);
             this.game.setHand('runner', data.runnerHand);
             this.showJankenResult();
@@ -1282,6 +1298,7 @@ class App {
 
         // 移動方向が選択された
         this.multiplayer.on('directionSelected', (data) => {
+            if (!data || !['oni', 'runner'].includes(data.role) || !['cw', 'ccw'].includes(data.direction)) return;
             if (data.role !== this.myRole) {
                 // 相手の移動方向が決まった
                 this.executeOnlineMove(data.role, data.direction);
@@ -1290,6 +1307,7 @@ class App {
 
         // 位置更新
         this.multiplayer.on('positionUpdated', (data) => {
+            if (!data || !this.validOnlineState({ ...data, turn: this.game.turn })) return;
             this.game.oniPos = data.oniPos;
             this.game.runnerPos = data.runnerPos;
             this.updateMarkerPositions();
@@ -1474,6 +1492,7 @@ class App {
      * オンラインゲームプレイ開始
      */
     startOnlineGamePlay(data) {
+        if (!this.validOnlineState(data)) return;
         this.isOnlineMode = true;
         this.game.reset();
         this.game.oniPos = data.oniPos;
@@ -1649,6 +1668,7 @@ class App {
      * turnEndedデータを適用
      */
     applyTurnEnded(data) {
+        if (!this.validOnlineState(data)) return;
         this.game.turn = data.turn;
         this.game.oniPos = data.oniPos;
         this.game.runnerPos = data.runnerPos;
@@ -1665,9 +1685,16 @@ class App {
      * gameFinishedデータを適用
      */
     applyGameFinished(data) {
+        if (!data || !['oni', 'runner'].includes(data.winner) || typeof data.reason !== 'string'
+            || data.reason.length > 160) return;
         this.game.winner = data.winner;
         this.game.winReason = data.reason;
         this.showResultScreen();
+    }
+
+    validOnlineState(data) {
+        return data && Number.isInteger(data.turn) && data.turn >= 1 && data.turn <= GameConfig.MAX_TURNS + 1
+            && [data.oniPos, data.runnerPos].every(p => Number.isInteger(p) && p >= 0 && p < GameConfig.BOARD_SIZE);
     }
 
     /**
